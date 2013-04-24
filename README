@@ -1,0 +1,79 @@
+1. mvn archetype:generate -DgroupId=com.mogujie.app -DartifactId=mogu-webapp -DarchetypeArtifactId=maven-archetype-webapp
+2. mvn eclipse:eclipse -DdownloadSources=true
+3. pom.xml
+	<properties>
+		<spring.version>3.0.5.RELEASE</spring.version>
+	</properties>
+---
+	<!-- Spring 3 dependencies -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+ 
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+ 
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		
+
+		
+		
+		================
+		
+Spring MVC中默认的ResponseBody为String的乱码有关问题
+www.MyException.Cn   发布于：2012-08-26 16:48:06   浏览：56次
+
+ 
+Spring MVC中默认的ResponseBody为String的乱码问题
+在Spring的MVC中，如果你使用的是中文，用的是UTF-8编码，有的时候我们会直接返回一个文本给前端的AJAX调用。Controllor中的代码如下：
+
+@ResponseBody
+@RequestMapping(value = "/test", method = RequestMethod.GET)
+public String test() {
+	return "中文测试";
+}
+ 这时发现响应出来的是乱码。原因是Spring会采用默认的StringHttpMessageConverter类来进行String类型的响应处理。查看源码发现，这个类莫名其妙的把响应的编码写死了，这样就产生了乱码问题。其中有句代码是：
+
+public static final Charset DEFAULT_CHARSET = Charset.forName("ISO-8859-1");
+ 
+
+解决方法：
+
+想到的方法是采用BeanPostProcessor，在Spring初始化好StringHttpMessageConverter之后进行修改响应类型。好在该类提供了setSupportedMediaTypes方法可以进行设置。所以实现的代码如下：
+
+public class UTF8StringBeanPostProcessor implements BeanPostProcessor{
+
+	@Override
+	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+		if(bean instanceof StringHttpMessageConverter){
+			MediaType mediaType = new MediaType("text", "plain", Charset.forName("UTF-8"));
+			List<MediaType> types = new ArrayList<MediaType>();
+			types.add(mediaType);
+			((StringHttpMessageConverter) bean).setSupportedMediaTypes(types);
+		}
+		return bean;
+	}
+
+	@Override
+	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		return bean;
+	}
+
+}
+ 然后在配置文件上加入：
+
+<beans:bean class="com.walmart.bestsales.util.UTF8StringBeanPostProcessor"></beans:bean>
+ 这样就成功实现了UTF8编码的输出。
+
+ 
+
+小结：采用BeanPostProcessor实现的好处就是不对已有的代码做修改，如果以后升级Spring也容易进行兼容。在国际化的大环境下，默认值至少也应该是UTF-8呀。

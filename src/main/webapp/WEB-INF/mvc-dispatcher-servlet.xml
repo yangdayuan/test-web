@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<bean
+		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+
+	<!-- Spring MVC -->
+	<context:component-scan base-package="com.mogujie.app" />
+
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="order" value="4" />
+		<property name="ignoreUnresolvablePlaceholders" value="false" />
+		<property name="locations">
+			<list>
+				<value>classpath:config.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean class="com.mogujie.app.common.UTF8StringBeanPostProcessor"></bean>
+
+	<bean id="velocityConfig"
+		class="org.springframework.web.servlet.view.velocity.VelocityConfigurer">
+		<property name="resourceLoaderPath" value="/WEB-INF/pages/" />
+		<property name="configLocation" value="/WEB-INF/velocity.properties" />
+	</bean>
+
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.velocity.VelocityViewResolver">
+		<property name="cache" value="true" />
+		<property name="prefix" value="" />
+		<property name="suffix" value=".vm" />
+		<property name="contentType">
+			<value>text/html;charset=UTF-8</value>
+		</property>
+		<property name="exposeSpringMacroHelpers" value="true" />
+	</bean>
+	<!-- END Spring MVC -->
+
+	<bean id="defaultTaobaoClient" class="com.taobao.api.DefaultTaobaoClient">
+		<constructor-arg index="0">
+			<value>${top.default.appkey}</value>
+		</constructor-arg>
+		<constructor-arg index="1">
+			<value>${top.default.appsecret}</value>
+		</constructor-arg>
+		<constructor-arg index="2">
+			<value>${top.url}</value>
+		</constructor-arg>
+	</bean>
+
+	<!-- Ibatis -->
+	<!-- bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean"> 
+		<property name="configLocation" value="WEB-INF/sqlmap-config.xml" /> <property 
+		name="dataSource" ref="c3p0DataSource" /> </bean -->
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.mogujie.app.juandou.model.daoimpl" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="c3p0DataSource" />
+		<!-- property name="configLocation" value="WEB-INF/sqlmap-config.xml" / -->
+	</bean>
+	<!-- END Ibatis -->
+
+	<!-- DataSource -->
+	<bean id="c3p0DataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>com.mysql.jdbc.Driver</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>jdbc:mysql://localhost:3306/mogujie</value>
+		</property>
+		<property name="properties">
+			<props>
+				<prop key="c3p0.acquire_increment">5</prop>
+				<prop key="c3p0.idle_test_period">100</prop>
+				<prop key="c3p0.max_size">100</prop>
+				<prop key="c3p0.max_statements">0</prop>
+				<prop key="c3p0.min_size">10</prop>
+				<prop key="user">root</prop>
+				<prop key="password"></prop>
+			</props>
+		</property>
+	</bean>
+	<!-- END DataSource -->
+</beans>
